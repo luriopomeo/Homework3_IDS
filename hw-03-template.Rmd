@@ -207,7 +207,48 @@ The sensitivity of 0.555 and specificity of 0.643 indicate that the model has li
 #### Exercise 4 (b)
 
 ```{r}
-gss16_rec_2 <- recipe(advfront ~ ., data = gss16_train) 
+#create recipe
+gss16_rec_2 <- recipe(advfront ~ ., data = gss16_train) |> 
+  step_dummy(all_nominal_predictors())
+
+#creaate model
+gss16_mod_2 <- logistic_reg() |> 
+  set_engine("glm") 
+
+#create workflow
+gss16_wflow_2 <- workflow() |>
+  add_recipe(gss16_rec_2) |>
+  add_model(gss16_mod_2)
+
+#fit data
+gss16_fit_2 <- gss16_wflow_2 |>
+  fit(data = gss16_train)
+
+#predict on test data then augment data to include if predicted to agree or not agree
+gss16_test_2aug <- augment(gss16_fit_2, gss16_test)
+gss16_test_2aug
+
+#plot roc curve
+gss16_test_2aug |>
+  roc_curve(truth = advfront, `.pred_Not agree`) |>
+  autoplot() 
+
+#Auroc value
+gss16_test_2aug|>
+  roc_auc(truth = advfront, `.pred_Not agree`)
+
+#Confusion table for cutoff 83 %
+gss16_test_2aug |>
+  mutate(
+    pred_083 = if_else(
+      .pred_Agree >= 0.83,
+      "Agree",
+      "Not agree"
+    ),
+    pred_083 = factor(pred_083, levels = levels(advfront))
+  ) |> 
+  conf_mat(truth = advfront, estimate = pred_083) 
+``` 
     
 ```
 
