@@ -31,7 +31,7 @@ gss16_advfront <- gss16 %>%
   drop_na()
 ```
 
-#### Re-levelling `advfront`
+#### Re-leveling `advfront`
 
 ```{r}
 gss16_advfront <- gss16_advfront %>%
@@ -68,17 +68,18 @@ gss16_advfront <- gss16_advfront %>%
 #Fit a linear regression model to predict emailhr based on the educ. From your output, state the formula for the line-of-best fit and give an interpretation of the emailhr estimate. (2 pts)
 
 model1 <- lm( emailhr ~ educ, data =  gss16_advfront )
-model<- tidy(model1)
+model1_coefs<- tidy(model1)
+model1_coefs
 
 ggplot(gss16_advfront, aes(x = educ, y = emailhr)) +
   geom_point(alpha = 0.2) +
-  geom_abline(intercept = model$estimate[1], slope = model$estimate[2], color = "blue", linewidth = 1) +
+  geom_abline(intercept = model1_coefs$estimate[1], slope = model1_coefs$estimate[2], color = "blue", linewidth = 1) +
   labs( title = "Email Hours per Week vs. Education Level",
         x = "Education Level", y = "Email Hours per Week") +
   theme_minimal()
 ```
 
-Shows positive correlation between level of education and time spent reading emails.
+The regression line shows positive correlation between level of education and time spent reading emails. The equation for the regression line is emailhr=-2.757 +0.685*educ, this means for every extra year spent in education, the model predicts an extra 0.685 more hours per week spent on email on average.
 
 #### Exercise 1 (b)
 
@@ -96,9 +97,9 @@ ggplot(model_aug, aes(x = .fitted, y = .resid)) +
   
 ```
 
-R squared value of only 0.029 which means education level is only responsible for a very small proportion of the variance found in the values for email usuage. This means most data points are quite far away from the regression line and means most the variation in the email usage is driven by other factors, not education level. Influenced by many other variables not included in the model.
+The model's R squared value is only 0.029 which means education level is only explain a very small proportion of the variance found in the values for email usage. This means most the variation in the email usage is driven by other factors.
 
-The plot of the residuals against the fitted values also shows a quite clear upwards fan shape, as the fitted values for predicted email hours increases, teh value for it's residual gets larger and larger. Shows that our assumption for a constant variance for a linear regression model to be suitable don't apply.
+The plot of the residuals against the fitted values also shows a quite clear upwards fan shape, as the fitted values for predicted email hours increases, the value for it's residual gets larger and larger. Shows that our assumption for a constant variance for a linear regression model to be suitable don't apply.
 
 ```{r}
 ggplot(model_aug, aes(x=.resid))+
@@ -110,9 +111,9 @@ ggplot(model_aug, aes(x=.resid))+
        subtitle = "Target Variable: Email Hours per Week - Predictor Variable: Education Level")
 
 ```
-Residuals clearly not normally distrobuted about 0 as residuals fan out when compared for the fitted values and histogram looks nothing like the fitted normal distrobution, so second assumption that for linear regression model the residuals are normally distrobuted about 0 is violated. 
+Residuals clearly not normally distributed about 0 as residuals fan out when compared for the fitted values and histogram looks nothing like the fitted normal distribution, so second assumption that for linear regression model the residuals are normally distributed about 0 is violated. 
 
-Whilst the model does capture still captures an overall postive correlation between email usage and education level, it leaves a huge amount of variance unexplained in the time spent using emails each week, and the model violates several assumptions needed for the use of a linear regression to be suitable. This means our p values, confidence intervals and any other statistics derived form this model maybe unreliable.
+Whilst the model does capture still captures an overall positive correlation between email usage and education level, it leaves a huge amount of variance unexplained in the time spent using emails each week, and the model violates several assumptions needed for the use of a linear regression to be suitable. Because the residuals don't appear to meet the assumptions very well, we should be careful when interpreting the p-values and confidence intervals from this model.
 
 ## Exercise 2: Compare two linear models
 
@@ -124,7 +125,8 @@ model2 <- lm(emailhr ~ educ + advfront, data = gss16_advfront)
 tidy(model2)
 ```
 
-P value of advfront is very high so seems to have no statistical significance, so any correlation between email usage and advfront when keeping the education level fixed could be due to random noise.
+The model implies keeping education fixed, people who agree are predicted to spend 0.48 more hours per week on email than those who don't agree.
+However, the P value of advfront is very high which suggests the there isn't strong evidence for a statistically significant relationship between email usage and advfront when education fixed, so any correlation between email usage and advfront when keeping the education level fixed could be due to random noise.
 
 #### Exercise 2 (b)
 
@@ -132,7 +134,7 @@ P value of advfront is very high so seems to have no statistical significance, s
 glance(model1)
 glance(model2)
 ```
-Both models have approximately the same R^2 values but model 2 has a slightly lower adjusted R^2 value. The small discrepency in adjusted values might be explained by the fact that because advfront doesn't add any statistical signficance or explanatory power the adjusted R^2 takes this into account and punishes it for the extra redundancy. There forem model 1 is superior because it is more parsimonious by Occam's Razor.
+Both models have approximately the same R^2 values but model 2 has a slightly lower adjusted R^2 value. The lower adjusted R^2 value for model 2 implies that adding the extra predictor doesn't improve the model enough to justify the decreased parsimony. Therefore model 1 is superior because it is more parsimonious by Occam's Razor.
 
 ## Exercise 3: Create a workflow to fit a model
 
@@ -157,14 +159,15 @@ gss16_wflow_1 <- workflow() |>
   add_model(gss16_mod_1)
 ```
 
-The response variable, "advfront", is a binary, categorical variable. This means I am can't predict whether it is a specific continuous numerical value but instead I am predicting the probability of an individual belonging to one of the categories "Agree" or "Not Agree", so hence I used logistic regression.
+I used logistic regression because advfront has two categories, Agree and Not agree. The model predicts the probability of someone belonging to either category based on their years of education.
 
 #### Exercise 3 (b)
 
 ```{r}
 #fit data
 gss16_fit_1 <- gss16_wflow_1 |>
-  fit(data = gss16_train)
+  fit(data = gss16_train) 
+tidy(extract_fit_parsnip(gss16_fit_1))
 
 #predict on test data then augment data to include if predicted to agree or not agree
 gss16_test_aug <- augment(gss16_fit_1, gss16_test)
@@ -197,8 +200,8 @@ gss16_test_aug |>
   conf_mat(truth = advfront, estimate = pred_083) 
 ``` 
 
-Sensitivity = 147/(147+118) = 0.55
-Specificity = 18/(18+10) = 0.64
+Sensitivity = 147/(147+118) = 0.555
+Specificity = 18/(18+10) = 0.643
 
 The sensitivity of 0.555 and specificity of 0.643 indicate that the model has limited ability to correctly classify individuals at the 0.83 probability cutoff. This is consistent with the AUROC of 0.581, which isn't much better than randomly guessing. This suggests that years of education alone is a relatively weak predictor for an individuals opinion for advfront.
 
@@ -209,7 +212,7 @@ The sensitivity of 0.555 and specificity of 0.643 indicate that the model has li
 gss16_rec_2 <- recipe(advfront ~ ., data = gss16_train) |> 
   step_dummy(all_nominal_predictors())
 
-#creaate model
+#create model
 gss16_mod_2 <- logistic_reg() |> 
   set_engine("glm") 
 
@@ -249,8 +252,6 @@ gss16_test_2aug |>
 
 #testing auroc on 
 ``` 
-    
-```
 
-Despite including more explanatory variables, Model 2 performed worse on the test data, with an AUROC of 0.535 compared to 0.581 for Model 1. This could be because the extra variables may have caused overfitting to relationships seen in the training data that didn't generalise to the testing data. However, neither model performs especially well with both having AUROCs close to 0.5 meaning they aren't able to distinguish between either agree or disagree very well; or, the extra variables include little useful information for predicting peoples opinion on the government funding work to advance the frontier of science. Overall though, I would probably pick model 1 as it is slightly larger AUROC and it's reduced complexity makes it easier to understand the relationship by Occam's Razor (if any).
+Despite including more explanatory variables, Model 2 performed worse on the test data, with an AUROC of 0.535 compared to 0.581 for Model 1. This could be because the extra variables may have caused overfitting to relationships seen in the training data that didn't generalize to the testing data. However, neither model performs especially well with both having AUROCs close to 0.5 meaning they aren't able to distinguish between either agree or disagree very well; or, the extra variables include little useful information for predicting peoples opinion on the government funding work to advance the frontier of science. Overall though, I would probably pick model 1 as it is slightly larger AUROC and it's reduced complexity makes it easier to understand the relationship by Occam's Razor (if any).
 
