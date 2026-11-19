@@ -252,6 +252,5 @@ gss16_test_2aug |>
     
 ```
 
-*Your answer here*
-
+Despite including more explanatory variables, Model 2 performed worse on the test data, with an AUROC of 0.535 compared to 0.581 for Model 1. This could be because the extra variables could have caused over fitting to relationships seen in the training data that didn't generalise to the testing data. However, neither model performs especially well with both having AUROC's close to 0.5 meaning they aren't able to distinguish between either agree or disagree very well. Overall though, I would probably pick model 1 as it is slightly larger AUROC and it's reduced complexity makes it easier to understand the relationship (if any).
 
