@@ -11,6 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 library(tidyverse)
 library(tidymodels)
+library(caret)
 ```
 
 
@@ -158,7 +159,7 @@ gss16_wflow_1 <- workflow() |>
   add_model(gss16_mod_1)
 ```
 
-*Your answer here*
+The response variable, "advfront", is a binary, categorical variable. This means I am can't predict whether it is a specific continuous numerical value but instead I am predicting the probability of an individual belonging to one of the categories "Agree" or "Not Agree", so hence I used logistic regression.
 
 #### Exercise 3 (b)
 
@@ -175,6 +176,10 @@ gss16_test_aug
 gss16_test_aug |>
   roc_curve(truth = advfront, `.pred_Not agree`) |>
   autoplot() 
+
+#Auroc value
+gss16_test_aug |>
+  roc_auc(truth = advfront, `.pred_Not agree`)
 ```
 
 ## Exercise 4: Performance of a logistic regression
@@ -182,15 +187,28 @@ gss16_test_aug |>
 #### Exercise 4 (a)
 
 ```{r}
-# replace this with your code
-```
+gss16_test_aug |>
+  mutate(
+    pred_083 = if_else(
+      .pred_Agree >= 0.83,
+      "Agree",
+      "Not agree"
+    ),
+    pred_083 = factor(pred_083, levels = levels(advfront))
+  ) |> 
+  conf_mat(truth = advfront, estimate = pred_083) 
+``` 
 
-*Your answer here*
+Sensitivity = 147/(147+118) = 0.55
+Specificity = 18/(18+10) = 0.64
+
+The sensitivity of 0.555 and specificity of 0.643 indicate that the model has limited ability to correctly classify individuals at the 0.83 probability cutoff. This is consistent with the AUROC of 0.581, which isn't much better than randomly guessing. This suggests that years of education alone is a relatively weak predictor for an individuals opinion for advfront.
 
 #### Exercise 4 (b)
 
 ```{r}
-# replace this with your code
+gss16_rec_2 <- recipe(advfront ~ ., data = gss16_train) 
+    
 ```
 
 *Your answer here*
